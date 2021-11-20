@@ -2,12 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from model import Model
-from utils import load_data, get_parent_category
+from utils import load_data
 
 cat_to_desc = load_data()
 cat_list = list(cat_to_desc.keys())
 
-model = Model(cat_list)
+model = Model()
+print(model.classify("ложка столовая"))
 
 app = FastAPI()
 
@@ -32,13 +33,8 @@ def classify(text: str):
     category, proba = model.classify(text)
     category_description = cat_to_desc.get(category, "Нет описания")
 
-    parent_category = get_parent_category(category)
-    parent_category_description = cat_to_desc.get(parent_category, "Нет описания")
-
     return {
         "category": category,
         "category_description": category_description,
-        "probability": proba,
-        "parent_category": parent_category,
-        "parent_category_description": parent_category_description
+        "probability": proba
     }
