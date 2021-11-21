@@ -1,14 +1,17 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import io
 
-from model import Model
-from utils import load_data
+from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+
+from model import KNNModel, RFModel
+from utils import load_data, read_table
 
 cat_to_desc = load_data()
 cat_list = list(cat_to_desc.keys())
 
-model = Model()
-print(model.classify("ложка столовая"))
+model = KNNModel()
+print(model.classify("вилка"))
 
 app = FastAPI()
 
@@ -30,11 +33,30 @@ def read_root():
 def classify(text: str):
     global model, cat_to_desc
 
-    category, proba = model.classify(text)
-    category_description = cat_to_desc.get(category, "Нет описания")
+    categories = model.classify(text)
 
     return {
-        "category": category,
-        "category_description": category_description,
-        "probability": proba
+        "categories": [
+            {
+                "category": category,
+                "category_description": cat_to_desc.get(category, "Нет описания"),
+                "probability": proba
+            }
+            for category, proba in categories
+        ]
     }
+
+
+@app.post("/handle_table")
+def handle_table(
+    table: UploadFile = File(...), thresh: float = Form(...), sheet_name: str = Form("main"),
+    name_column: str = Form("name"), category_column: str = Form("category")
+):
+    df = read_table(table.file.read(), sheet_name)
+    names = df[name_column]
+    categories = df[category_column]
+    
+    for name, category in zip(names, categories):
+        pass
+
+    return StreamingResponse(io.BytesIO(table.file.read()), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

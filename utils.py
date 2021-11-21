@@ -1,4 +1,5 @@
-from typing import Dict
+from typing import Dict, List
+import io
 
 import pandas as pd
 import numpy as np
@@ -36,3 +37,31 @@ def text_to_vectors(text: str) -> np.ndarray:
 
 def text_to_vector(text: str) -> np.ndarray:
     return text_to_vectors(text).max(axis=0)
+
+
+def class_probas_to_multiprobas(probas) -> np.ndarray:
+    result = np.zeros(len(probas))
+    for i, proba in enumerate(probas):
+        result[i] = proba[0, 1]
+    return result
+
+
+def onehot(size: int, index: int) -> np.ndarray:
+    result = np.zeros(size)
+    result[index] = 1
+    return result
+
+
+def inverse_multihot(encoder, multihot: np.ndarray) -> List[str]:
+    size = len(multihot)
+    result = []
+    for i in range(len(multihot)):
+        if multihot[i] == 1:
+            result.append(
+                encoder.inverse_transform(onehot(size, i).reshape(1, -1))[0, 0]
+            )
+    return result
+
+
+def read_table(file: bytes, sheet_name: str):
+    return pd.read_excel(io.BytesIO(file), sheet_name=sheet_name)
