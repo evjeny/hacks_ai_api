@@ -4,13 +4,13 @@ from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from model import KNNModel, RFModel
+from model import KNNModel, RFModel, MLPModel
 from utils import load_data, read_table
 
 cat_to_desc = load_data()
 cat_list = list(cat_to_desc.keys())
 
-model = KNNModel()
+model = MLPModel()
 print(model.classify("вилка"))
 
 app = FastAPI()

@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
 import joblib
 
@@ -49,5 +50,24 @@ class KNNModel(Model):
         
         pred_labels = utils.inverse_multihot(self.onehot, multihot)
         pred_probas = [multiprobas[i] for i in range(len(multihot)) if multihot[i] == 1]
-        
+
         return [(label, proba) for label, proba in zip(pred_labels, pred_probas)]
+
+
+class MLPModel(Model):
+    def __init__(self) -> None:
+        self.onehot: OneHotEncoder = joblib.load("onehot_mlp.joblib")
+        self.mlp: MLPClassifier = joblib.load("mlp.joblib")
+    
+    def classify(self, text: str, thresh: float = 0.1) -> List[Tuple[str, float]]:
+        vector = utils.text_to_vector(text).reshape(1, -1)
+
+        multiprobas = self.mlp.predict_proba(vector)[0]
+        multihot = multiprobas.copy()
+        multihot[multihot >= thresh] = 1
+        multihot[multihot < thresh] = 0
+        
+        pred_labels = utils.inverse_multihot(self.onehot, multihot)
+        pred_probas = [multiprobas[i] for i in range(len(multihot)) if multihot[i] == 1]
+
+        return [(label, float(proba)) for label, proba in zip(pred_labels, pred_probas)]

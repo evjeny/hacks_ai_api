@@ -135,3 +135,5 @@ navec_hudlit_v1_12B_500K_300d_100q.tar
 knc.joblib
 onehot.joblib
 rf_multiclass.joblib
+mlp.joblib
+onehot_mlp.joblib
