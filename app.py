@@ -10,8 +10,18 @@ from utils import load_data, read_table
 cat_to_desc = load_data()
 cat_list = list(cat_to_desc.keys())
 
-model = MLPModel()
-print(model.classify("вилка"))
+knn = KNNModel()
+rf = RFModel()
+mlp = MLPModel()
+
+model_mapper = {
+    "knn": knn,
+    "rf": rf,
+    "mlp": mlp
+}
+
+for name, model in model_mapper.items():
+    print(name, ":", model.classify("вилка"))
 
 app = FastAPI()
 
@@ -30,10 +40,13 @@ def read_root():
 
 
 @app.get("/classify/{text}")
-def classify(text: str):
-    global model, cat_to_desc
+def classify(text: str, model_type: str = "knn"):
+    global model_mapper, knn, cat_to_desc
 
-    categories = model.classify(text)
+    if model_type in model_mapper:
+        model_type = "knn"
+
+    categories = model_mapper[model_type].classify(text)
 
     return {
         "categories": [
@@ -43,20 +56,6 @@ def classify(text: str):
                 "probability": proba
             }
             for category, proba in categories
-        ]
+        ],
+        "model_type": model_type
     }
-
-
-@app.post("/handle_table")
-def handle_table(
-    table: UploadFile = File(...), thresh: float = Form(...), sheet_name: str = Form("main"),
-    name_column: str = Form("name"), category_column: str = Form("category")
-):
-    df = read_table(table.file.read(), sheet_name)
-    names = df[name_column]
-    categories = df[category_column]
-    
-    for name, category in zip(names, categories):
-        pass
-
-    return StreamingResponse(io.BytesIO(table.file.read()), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
